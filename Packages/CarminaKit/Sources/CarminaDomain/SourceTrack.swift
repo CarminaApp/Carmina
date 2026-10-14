@@ -27,10 +27,10 @@ public struct SourceTrackID: Hashable, Sendable, Codable {
 /// A song as it exists on one source, with that source's own details.
 public struct SourceTrack: Hashable, Sendable, Codable {
 	public let id: SourceTrackID
-	public var title: String
+	public var details: TrackDetails
 
-	public init(id: SourceTrackID, title: String) {
+	public init(id: SourceTrackID, details: TrackDetails) {
 		self.id = id
-		self.title = title
+		self.details = details
 	}
 }

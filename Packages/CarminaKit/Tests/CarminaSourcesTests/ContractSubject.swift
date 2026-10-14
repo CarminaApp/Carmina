@@ -31,7 +31,8 @@ struct ContractSubject: Sendable, CustomTestStringConvertible {
 			make: {
 				let source = SourceID()
 				let catalog = ["Blue Monday", "Blue Line", "Red Light"].enumerated().map { index, title in
-					SourceTrack(id: SourceTrackID(source: source, key: "track-\(index)"), title: title)
+					SourceTrack(
+						id: SourceTrackID(source: source, key: "track-\(index)"), details: TrackDetails(title: title))
 				}
 				// A page size smaller than the catalog, so listing has to follow cursors across pages.
 				let service = FakeService(source: source, tracks: catalog, capabilities: capabilities, pageSize: 2)

@@ -52,7 +52,7 @@ public actor FakeService: Service {
 
 	public func search(_ text: String, limit: Int) async throws -> [SourceTrack] {
 		try checkAvailable()
-		let matches = tracks.filter { $0.title.localizedStandardContains(text) }
+		let matches = tracks.filter { $0.details.title.localizedStandardContains(text) }
 		return Array(matches.prefix(limit))
 	}
 
@@ -70,7 +70,7 @@ public actor FakeService: Service {
 			throw ServiceError.unsupported
 		}
 		_ = try await playable(for: track)
-		try Data(track.title.utf8).write(to: destination)
+		try Data(track.details.title.utf8).write(to: destination)
 	}
 
 	public func songs(since mark: RefreshMark?, after cursor: PageCursor?) async throws -> SongPage {
