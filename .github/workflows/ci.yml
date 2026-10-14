@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v5
+      - name: swift-format
+        run: swift format lint --strict --recursive --parallel --configuration .swift-format App Packages
+
+  packages:
+    name: Package tests
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v5
+      - name: CarminaKit
+        run: swift test --package-path Packages/CarminaKit
+
+  app:
+    name: Build app
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild build \
+            -project Carmina.xcodeproj \
+            -scheme Carmina \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
