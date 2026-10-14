@@ -3,6 +3,7 @@
 import CarminaDomain
 import CarminaSources
 import CarminaSourcesTesting
+import Foundation
 import Testing
 
 /// The rules every adapter at the Service port must follow.
@@ -49,6 +50,76 @@ struct ServiceContractTests {
 		case .changesOnly:
 			// Change feeds may not report deletions; Refresh then relies on a scheduled complete listing.
 			#expect(listing.deleted.allSatisfy { $0 == deleted })
+		}
+	}
+
+	@Test("Every source track is playable until it is deleted from the source", arguments: ContractSubject.all)
+	func playableUntilDeleted(_ subject: ContractSubject) async throws {
+		let (service, catalog) = try await subject.make()
+		for track in catalog {
+			_ = try await service.playable(for: track)
+		}
+		let deleted = try #require(catalog.first)
+
+		try await subject.deleteFromSource(service, deleted.id)
+
+		await #expect(throws: ServiceError.trackNotFound) {
+			try await service.playable(for: deleted)
+		}
+	}
+
+	@Test("Download works exactly when the service declares it can download", arguments: ContractSubject.all)
+	func downloadMatchesCapabilities(_ subject: ContractSubject) async throws {
+		let (service, catalog) = try await subject.make()
+		let track = try #require(catalog.first)
+		let destination = URL.temporaryDirectory.appending(path: UUID().uuidString)
+		defer { try? FileManager.default.removeItem(at: destination) }
+
+		if service.capabilities.contains(.download) {
+			try await service.download(track, to: destination)
+			#expect(FileManager.default.fileExists(atPath: destination.path()))
+		} else {
+			await #expect(throws: ServiceError.unsupported) {
+				try await service.download(track, to: destination)
+			}
+		}
+	}
+
+	@Test(
+		"A source that becomes unavailable fails every call with the reason, even partway through a listing",
+		arguments: ContractSubject.all, [ServiceError.Reason.offline, .signInExpired]
+	)
+	func unavailableFailsWithReason(_ subject: ContractSubject, reason: ServiceError.Reason) async throws {
+		let (service, catalog) = try await subject.make()
+		let track = try #require(catalog.first)
+		let firstPage = try await service.songs(since: nil, after: nil)
+		let next = try #require(firstPage.next, "The catalog must span more than one page")
+
+		try await subject.makeUnavailable(service, reason)
+
+		await #expect(throws: ServiceError.unavailable(reason)) {
+			try await service.songs(since: nil, after: next)
+		}
+		await #expect(throws: ServiceError.unavailable(reason)) {
+			try await service.search(subject.broadSearchTerm, limit: 1)
+		}
+		await #expect(throws: ServiceError.unavailable(reason)) {
+			try await service.playable(for: track)
+		}
+	}
+
+	@Test("A cancelled listing stops instead of returning another page", arguments: ContractSubject.all)
+	func cancelledListingStops(_ subject: ContractSubject) async throws {
+		let (service, _) = try await subject.make()
+		let next = try #require(try await service.songs(since: nil, after: nil).next)
+
+		let listing = Task {
+			withUnsafeCurrentTask { $0?.cancel() }
+			return try await service.songs(since: nil, after: next)
+		}
+
+		await #expect(throws: CancellationError.self) {
+			try await listing.value
 		}
 	}
 }
