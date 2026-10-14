@@ -101,6 +101,9 @@
 			);
 			mainGroup = 9884B8AB307EA5F000C15135;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				985B376C307F67DE00B8BC60 /* XCLocalSwiftPackageReference "Packages/CarminaKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9884B8B5307EA5F000C15135 /* Products */;
 			projectDirPath = "";
@@ -373,6 +376,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		985B376C307F67DE00B8BC60 /* XCLocalSwiftPackageReference "Packages/CarminaKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/CarminaKit;
+		};
+/* End XCLocalSwiftPackageReference section */
 	};
 	rootObject = 9884B8AC307EA5F000C15135 /* Project object */;
 	validationLevel = 1;
